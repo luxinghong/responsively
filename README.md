@@ -2,6 +2,8 @@
 
 一个轻量级的响应式设计预览工具，可以同时在多个设备尺寸下预览网页，支持同步操作和分页显示。
 
+![Demo Screenshot](https://ji-zhu.com/static/pics/responsively.png)
+
 ## 功能特性
 
 - 🖥️ **多设备预览**：同时在多个设备尺寸下预览网页
