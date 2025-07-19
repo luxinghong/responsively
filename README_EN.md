@@ -4,6 +4,8 @@ A lightweight responsive design preview tool that allows you to preview web page
 
 ![Demo Screenshot](https://ji-zhu.com/static/pics/responsively.png)
 
+> The website shown in the demo is [Ji-Zhu (记住)](https://ji-zhu.com) - a quite excellent niche learning website, worth checking out.
+
 ## Features
 
 - 🖥️ **Multi-Device Preview**: Preview web pages across multiple device sizes simultaneously
