@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Responsive Preview Tool</title>
+  <style>
+    :root {
+      --gap: 1rem;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 0;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+    .pagination {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grid-layout .pagination {
+      display: flex;
+    }
+    .pagination button {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .pagination button:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
+      color: #999;
+    }
+    .pagination button.active {
+      background: #333;
+      color: white;
+    }
+    .layout-toggle button,
+    .group-select {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .layout-toggle button.active {
+      background: #333;
+      color: white;
+    }
+    .group-name {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      padding-left: 0.2rem;
+    }
+    .preview-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+    }
+    .grid-layout .preview-container {
+      display: grid;
+      grid-template-columns: repeat(4, max-content);
+      gap: var(--gap);
+      justify-content: space-evenly;
+      align-items: start;
+    }
+    .grid-layout .device {
+      margin-bottom: 0;
+    }
+    .device {
+      background: white;
+      padding: 0;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: max-content;
+    }
+    .device-name {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      color: #555;
+    }
+    iframe {
+      border: none;
+      transform: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <div class="layout-toggle">
+      <button id="layout-vertical" class="active">竖版</button>
+      <button id="layout-grid">网格</button>
+    </div>
+    <select id="group-select" class="group-select"></select>
+    <div class="pagination" id="pagination">
+      <button id="prev-page">上一页</button>
+      <span id="page-info"></span>
+      <button id="next-page">下一页</button>
+    </div>
+    <label style="margin-left: 1rem;">
+      <input type="checkbox" id="sync-toggle"> 同步操作
+    </label>
+  </div>
+
+  <div id="preview"></div>
+
+  <script>
+    const GROUPS = [
+      {
+        name: "4xl",
+        devices: [
+          { name: "2560x1271", width: 2560, height: 1271 },
+          { name: "2560x919", width: 2560, height: 919 },
+          { name: "2552x1284", width: 2552, height: 1284 },
+          { name: "2560x1440", width: 2560, height: 1440 },
+          { name: "2560x1313", width: 2560, height: 1313 },
+          { name: "3064x1580", width: 3064, height: 1580 },
+          { name: "3440x1243", width: 3440, height: 1243 },
+          { name: "2844x1464", width: 2844, height: 1464 },
+          { name: "2552x970", width: 2552, height: 970 },
+          { name: "2752x983", width: 2752, height: 983 },
+          { name: "3840x2071", width: 3840, height: 2071 },
+          { name: "3024x1764", width: 3024, height: 1764 },
+          { name: "2552x1284", width: 2552, height: 1284 }
+        ]
+      },
+      {
+        name: "<md",
+        devices: [
+          { name: "360x706", width: 360, height: 706 },
+          { name: "360x680", width: 360, height: 680 },
+          { name: "360x560", width: 360, height: 560 },
+          { name: "360x740", width: 360, height: 740 },
+          { name: "393x754", width: 393, height: 754 },
+          { name: "393x851", width: 393, height: 851 },
+          { name: "393x599", width: 393, height: 599 },
+          { name: "390x753", width: 390, height: 753 },
+          { name: "390x844", width: 390, height: 844 },
+          { name: "390x660", width: 390, height: 660 },
+          { name: "412x732", width: 412, height: 732 },
+          { name: "412x820", width: 412, height: 820 },
+          { name: "412x544", width: 412, height: 544 },
+          { name: "400x780", width: 400, height: 780 },
+          { name: "384x745", width: 384, height: 745 },
+          { name: "384x696", width: 384, height: 696 },
+          { name: "414x804", width: 414, height: 804 },
+          { name: "430x834", width: 430, height: 834 },
+          { name: "375x724", width: 375, height: 724 },
+          { name: "428x835", width: 428, height: 835 },
+          { name: "402x774", width: 402, height: 774 }
+        ]
+      }
+    ];
+
+    const TARGET_URL = "http://localhost";
+    const previewContainer = document.getElementById("preview");
+    const groupSelect = document.getElementById("group-select");
+    const prevPageBtn = document.getElementById("prev-page");
+    const nextPageBtn = document.getElementById("next-page");
+    const pageInfo = document.getElementById("page-info");
+    
+    let currentPage = 1;
+    let currentGroupIndex = 0;
+    const PAGE_SIZE = 8;
+
+    // 添加默认选项
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "请选择设备分组";
+    groupSelect.appendChild(defaultOption);
+    
+    GROUPS.forEach((group, index) => {
+      const option = document.createElement("option");
+      option.value = index;
+      option.textContent = group.name;
+      groupSelect.appendChild(option);
+    });
+
+    groupSelect.addEventListener("change", () => {
+      if (groupSelect.value === "") {
+        previewContainer.innerHTML = "";
+        return;
+      }
+      currentGroupIndex = parseInt(groupSelect.value);
+      currentPage = 1;
+      renderGroup();
+    });
+
+    let currentIframes = [];
+
+    function renderGroup() {
+      const group = GROUPS[currentGroupIndex];
+      
+      // 清理之前的iframe
+      currentIframes.forEach(iframe => {
+        observer.unobserve(iframe);
+        const timer = loadingTimers.get(iframe);
+        if (timer) {
+          clearTimeout(timer);
+          loadingTimers.delete(iframe);
+        }
+      });
+      currentIframes = [];
+      
+      previewContainer.innerHTML = "";
+
+      const groupTitle = document.createElement("div");
+      groupTitle.className = "group-name";
+      groupTitle.textContent = group.name;
+
+      const container = document.createElement("div");
+      container.className = "preview-container";
+
+      // 网格模式下使用分页，竖版模式下显示全部（但限制数量）
+      let devicesToShow;
+      if (document.body.classList.contains("grid-layout")) {
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        const endIndex = startIndex + PAGE_SIZE;
+        devicesToShow = group.devices.slice(startIndex, endIndex);
+        updatePagination(group.devices.length);
+      } else {
+        devicesToShow = group.devices.slice(0, Math.min(group.devices.length, 6));
+      }
+      
+      if (document.body.classList.contains("grid-layout")) {
+        // 网格模式下按顺序加载iframe
+        let loadIndex = 0;
+        
+        devicesToShow.forEach((device, index) => {
+          const deviceDiv = document.createElement("div");
+          deviceDiv.className = "device";
+
+          const nameDiv = document.createElement("div");
+          nameDiv.className = "device-name";
+          nameDiv.textContent = device.name;
+
+          const iframe = document.createElement("iframe");
+          iframe.dataset.src = TARGET_URL;
+          iframe.width = device.width;
+          iframe.height = device.height;
+          iframe.src = "about:blank";
+
+          // 延迟加载，每个iframe间隔1秒
+          setTimeout(() => {
+            observer.observe(iframe);
+            currentIframes.push(iframe);
+            setupIframeSync(iframe);
+          }, index * 1000);
+
+          deviceDiv.appendChild(nameDiv);
+          deviceDiv.appendChild(iframe);
+          container.appendChild(deviceDiv);
+        });
+      } else {
+        // 竖版模式下正常加载
+        devicesToShow.forEach(device => {
+          const deviceDiv = document.createElement("div");
+          deviceDiv.className = "device";
+
+          const nameDiv = document.createElement("div");
+          nameDiv.className = "device-name";
+          nameDiv.textContent = device.name;
+
+          const iframe = document.createElement("iframe");
+          iframe.dataset.src = TARGET_URL;
+          iframe.width = device.width;
+          iframe.height = device.height;
+          iframe.src = "about:blank";
+
+          observer.observe(iframe);
+          currentIframes.push(iframe);
+          setupIframeSync(iframe);
+
+          deviceDiv.appendChild(nameDiv);
+          deviceDiv.appendChild(iframe);
+          container.appendChild(deviceDiv);
+        });
+      }
+
+      previewContainer.appendChild(groupTitle);
+      previewContainer.appendChild(container);
+    }
+
+    function updatePagination(totalDevices) {
+      if (!document.body.classList.contains("grid-layout")) {
+        return;
+      }
+      const totalPages = Math.ceil(totalDevices / PAGE_SIZE);
+      pageInfo.textContent = `第 ${currentPage} 页，共 ${totalPages} 页`;
+      
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+    }
+
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderGroup();
+      }
+    });
+
+    nextPageBtn.addEventListener("click", () => {
+      const totalPages = Math.ceil(GROUPS[currentGroupIndex].devices.length / PAGE_SIZE);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderGroup();
+      }
+    });
+
+    document.getElementById("layout-vertical").onclick = () => {
+      document.body.classList.remove("grid-layout");
+      toggleActive("layout-vertical");
+      currentPage = 1;
+      if (groupSelect.value !== "") {
+        renderGroup();
+      }
+    };
+    document.getElementById("layout-grid").onclick = () => {
+      document.body.classList.add("grid-layout");
+      toggleActive("layout-grid");
+      currentPage = 1;
+      if (groupSelect.value !== "") {
+        renderGroup();
+      }
+    };
+
+    function toggleActive(id) {
+      document.querySelectorAll(".layout-toggle button").forEach(btn => btn.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    const loadingTimers = new Map();
+    let syncEnabled = false;
+    let masterIframe = null;
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const iframe = entry.target;
+        
+        if (entry.isIntersecting) {
+          // 进入视口，设置1秒延迟加载
+          if (!loadingTimers.has(iframe) && iframe.src === "about:blank") {
+            const timer = setTimeout(() => {
+              if (iframe.src === "about:blank") {
+                iframe.src = iframe.dataset.src;
+              }
+              loadingTimers.delete(iframe);
+            }, 1500); // 停留1秒后加载
+            
+            loadingTimers.set(iframe, timer);
+          }
+        } else {
+          // 离开视口，取消加载定时器
+          const timer = loadingTimers.get(iframe);
+          if (timer) {
+            clearTimeout(timer);
+            loadingTimers.delete(iframe);
+          }
+        }
+      });
+    }, { rootMargin: '400px' });
+
+    // 同步操作功能
+    document.getElementById("sync-toggle").addEventListener("change", (e) => {
+      syncEnabled = e.target.checked;
+      if (!syncEnabled) {
+        masterIframe = null;
+      }
+    });
+
+    function setupIframeSync(iframe) {
+      iframe.addEventListener('load', () => {
+        console.log('iframe loaded:', iframe.src);
+        
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          const iframeWin = iframe.contentWindow;
+          
+          if (!iframeDoc || !iframeWin) {
+            console.log('无法访问iframe内容，可能是跨域限制');
+            return;
+          }
+          
+          console.log('设置同步监听器');
+          
+          // 监听滚动事件
+          iframeWin.addEventListener('scroll', () => {
+            if (!syncEnabled) return;
+            console.log('检测到滚动事件');
+            syncScrollToOthers(iframeWin.scrollX, iframeWin.scrollY, iframe);
+          });
+          
+          // 监听点击事件
+          iframeDoc.addEventListener('click', (e) => {
+            if (!syncEnabled) return;
+            console.log('检测到点击事件', e.clientX, e.clientY);
+            syncClickToOthers(e, iframe);
+          });
+          
+          // 监听输入事件
+          iframeDoc.addEventListener('input', (e) => {
+            if (!syncEnabled) return;
+            console.log('检测到输入事件');
+            syncInputToOthers(e, iframe);
+          });
+          
+        } catch (error) {
+          console.error('同步操作受跨域限制:', error);
+        }
+      });
+    }
+
+    function syncScrollToOthers(scrollX, scrollY, sourceIframe) {
+      currentIframes.forEach(iframe => {
+        if (iframe !== sourceIframe && iframe.contentWindow) {
+          try {
+            iframe.contentWindow.scrollTo(scrollX, scrollY);
+          } catch (error) {
+            // 跨域限制
+          }
+        }
+      });
+    }
+
+    function syncClickToOthers(clickEvent, sourceIframe) {
+      const x = clickEvent.clientX;
+      const y = clickEvent.clientY;
+      
+      currentIframes.forEach(iframe => {
+        if (iframe !== sourceIframe && iframe.contentDocument) {
+          try {
+            const targetElement = iframe.contentDocument.elementFromPoint(x, y);
+            if (targetElement) {
+              console.log('同步点击到其他iframe');
+              targetElement.click();
+            }
+          } catch (error) {
+            console.error('点击同步失败:', error);
+          }
+        }
+      });
+    }
+
+    function syncInputToOthers(inputEvent, sourceIframe) {
+      const target = inputEvent.target;
+      const value = target.value;
+      const tagName = target.tagName;
+      const id = target.id;
+      const className = target.className;
+      
+      currentIframes.forEach(iframe => {
+        if (iframe !== sourceIframe && iframe.contentDocument) {
+          try {
+            let targetElement = null;
+            if (id) {
+              targetElement = iframe.contentDocument.getElementById(id);
+            } else if (className) {
+              targetElement = iframe.contentDocument.querySelector('.' + className);
+            } else {
+              targetElement = iframe.contentDocument.querySelector(tagName);
+            }
+            
+            if (targetElement && targetElement.value !== undefined) {
+              targetElement.value = value;
+              console.log('同步输入到其他iframe');
+            }
+          } catch (error) {
+            console.error('输入同步失败:', error);
+          }
+        }
+      });
+    }
+
+    // 初始化时不加载任何内容
+  </script>
+</body>
+</html>
+
