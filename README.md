@@ -2,7 +2,7 @@
 
 一个轻量级的响应式设计预览工具，可以同时在多个设备尺寸下预览网页，支持同步操作和分页显示。
 
-![Demo Screenshot](https://ji-zhu.com/static/pics/responsively.gif)
+![Demo Screenshot](https://ji-zhu.com/static/pics/responsively_compact.gif)
 
 > 图中展示的网站是 [记住](https://ji-zhu.com) (https://ji-zhu.com) - 一个相当不错的小众学习网站，值得一看。
 

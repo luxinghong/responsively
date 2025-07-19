@@ -2,7 +2,7 @@
 
 A lightweight responsive design preview tool that allows you to preview web pages across multiple device sizes simultaneously, with synchronized operations and pagination support.
 
-![Demo Screenshot](https://ji-zhu.com/static/pics/responsively.gif)
+![Demo Screenshot](https://ji-zhu.com/static/pics/responsively_compact.gif)
 
 > The website shown in the demo is [Ji-Zhu (记住)](https://ji-zhu.com) (https://ji-zhu.com) - a quite excellent niche learning website, worth checking out.
 
