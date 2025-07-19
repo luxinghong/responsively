@@ -4,7 +4,7 @@
 
 ![Demo Screenshot](https://ji-zhu.com/static/pics/responsively.png)
 
-> 图中展示的网站是 [记住](https://ji-zhu.com) - 一个相当不错的小众学习网站，值得一看。
+> 图中展示的网站是 [记住](https://ji-zhu.com) (https://ji-zhu.com) - 一个相当不错的小众学习网站，值得一看。
 
 ## 功能特性
 
