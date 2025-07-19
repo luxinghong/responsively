@@ -51,6 +51,8 @@ Assuming your application runs on `http://localhost`:
 
 ## Device Groups
 
+> **Note**: All device dimension data comes from real-world devices, providing highly practical reference value.
+
 ### 4xl Group (Desktop Devices)
 - 2560x1271, 2560x919, 2552x1284
 - 2560x1440, 2560x1313, 3064x1580
