@@ -95,6 +95,25 @@
       font-size: 1.2rem;
       margin-bottom: 0.5rem;
       color: #555;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .refresh-btn {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      margin-left: 8px;
+    }
+    .refresh-btn:hover {
+      background: #e0e0e0;
     }
     iframe {
       border: none;
@@ -117,6 +136,9 @@
     <label style="margin-left: 1rem;">
       <input type="checkbox" id="sync-toggle"> 同步操作
     </label>
+    <button id="refresh-all" style="margin-left: 1rem; padding: 0.3rem 0.7rem; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 4px; font-size: 0.9rem;">
+      ⟲ 刷新全部
+    </button>
   </div>
 
   <div id="preview"></div>
@@ -259,7 +281,23 @@
 
           const nameDiv = document.createElement("div");
           nameDiv.className = "device-name";
-          nameDiv.textContent = device.name;
+          
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = device.name;
+          
+          const refreshBtn = document.createElement("button");
+          refreshBtn.className = "refresh-btn";
+          refreshBtn.innerHTML = "⟲";
+          refreshBtn.title = "刷新";
+          refreshBtn.onclick = () => {
+            iframe.src = "about:blank";
+            setTimeout(() => {
+              iframe.src = iframe.dataset.src;
+            }, 100);
+          };
+          
+          nameDiv.appendChild(nameSpan);
+          nameDiv.appendChild(refreshBtn);
 
           const iframe = document.createElement("iframe");
           iframe.dataset.src = TARGET_URL;
@@ -286,7 +324,23 @@
 
           const nameDiv = document.createElement("div");
           nameDiv.className = "device-name";
-          nameDiv.textContent = device.name;
+          
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = device.name;
+          
+          const refreshBtn = document.createElement("button");
+          refreshBtn.className = "refresh-btn";
+          refreshBtn.innerHTML = "⟲";
+          refreshBtn.title = "刷新";
+          refreshBtn.onclick = () => {
+            iframe.src = "about:blank";
+            setTimeout(() => {
+              iframe.src = iframe.dataset.src;
+            }, 100);
+          };
+          
+          nameDiv.appendChild(nameSpan);
+          nameDiv.appendChild(refreshBtn);
 
           const iframe = document.createElement("iframe");
           iframe.dataset.src = TARGET_URL;
@@ -393,6 +447,21 @@
       if (!syncEnabled) {
         masterIframe = null;
       }
+    });
+
+    // 刷新全部功能
+    document.getElementById("refresh-all").addEventListener("click", () => {
+      // 先将所有iframe设为空白
+      currentIframes.forEach(iframe => {
+        iframe.src = "about:blank";
+      });
+      
+      // 按顺序延迟加载，间隔1秒
+      currentIframes.forEach((iframe, index) => {
+        setTimeout(() => {
+          iframe.src = iframe.dataset.src;
+        }, index * 1000 + 100);
+      });
     });
 
     function setupIframeSync(iframe) {

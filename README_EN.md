@@ -13,6 +13,7 @@ A lightweight responsive design preview tool that allows you to preview web page
 - 🔄 **Synchronized Operations**: Operations in one device can be synchronized to others (when same-origin)
 - 📄 **Pagination**: Grid mode supports pagination to avoid performance issues
 - 🎛️ **Layout Toggle**: Supports both vertical and grid display modes
+- 🔄 **Refresh Functions**: Support individual iframe refresh and batch refresh for all iframes
 - ⚡ **Performance Optimized**: Lazy loading iframes to prevent browser crashes
 
 ## Quick Start
@@ -48,6 +49,9 @@ Assuming your application runs on `http://localhost`:
    - **Grid**: Devices in grid layout, 4 per row with pagination support
 3. **Enable Sync Operations**: Check the "Sync Operations" checkbox (only works with same-origin)
 4. **Pagination**: Use Previous/Next buttons in grid mode
+5. **Refresh Operations**:
+   - Click the "⟲" button in device title bar to refresh individual iframe
+   - Click the "Refresh All" button in control bar to batch refresh all iframes
 
 ## Device Groups
 
