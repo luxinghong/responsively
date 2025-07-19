@@ -69,6 +69,10 @@ Assuming your application runs on `http://localhost`:
 - 414x804, 430x834, 375x724
 - 428x835, 402x774
 
+### md Group (Medium Devices)
+- 800x600, 810x1010, 988x860
+- 1016x1024, 834x1120
+
 ## Technical Notes
 
 ### Sync Operations and TARGET_URL Relationship
