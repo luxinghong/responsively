@@ -37,6 +37,18 @@
       border-radius: 4px;
       font-size: 0.9rem;
     }
+    #jump-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+    }
+    #jump-btn:hover {
+      background: #f0f0f0;
+    }
     .pagination button:disabled {
       background: #f5f5f5;
       cursor: not-allowed;
@@ -132,6 +144,9 @@
       <button id="prev-page">上一页</button>
       <span id="page-info"></span>
       <button id="next-page">下一页</button>
+      <span style="margin-left: 1rem;">跳转到：</span>
+      <input type="number" id="page-jump" min="1" style="width: 60px; padding: 0.3rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+      <button id="jump-btn">跳转</button>
     </div>
     <label style="margin-left: 1rem;">
       <input type="checkbox" id="sync-toggle"> 同步操作
@@ -266,6 +281,8 @@
     const prevPageBtn = document.getElementById("prev-page");
     const nextPageBtn = document.getElementById("next-page");
     const pageInfo = document.getElementById("page-info");
+    const pageJumpInput = document.getElementById("page-jump");
+    const jumpBtn = document.getElementById("jump-btn");
     
     let currentPage = 1;
     let currentGroupIndex = 0;
@@ -430,6 +447,10 @@
       
       prevPageBtn.disabled = currentPage <= 1;
       nextPageBtn.disabled = currentPage >= totalPages;
+      
+      // 更新跳转输入框的最大值
+      pageJumpInput.max = totalPages;
+      pageJumpInput.value = currentPage;
     }
 
     prevPageBtn.addEventListener("click", () => {
@@ -444,6 +465,24 @@
       if (currentPage < totalPages) {
         currentPage++;
         renderGroup();
+      }
+    });
+
+    // 页码跳转功能
+    jumpBtn.addEventListener("click", () => {
+      const targetPage = parseInt(pageJumpInput.value);
+      const totalPages = Math.ceil(GROUPS[currentGroupIndex].devices.length / PAGE_SIZE);
+      
+      if (targetPage >= 1 && targetPage <= totalPages && targetPage !== currentPage) {
+        currentPage = targetPage;
+        renderGroup();
+      }
+    });
+
+    // 回车键跳转
+    pageJumpInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        jumpBtn.click();
       }
     });
 
