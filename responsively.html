@@ -340,11 +340,18 @@
       // 清理之前的iframe
       currentIframes.forEach(iframe => {
         observer.unobserve(iframe);
-        const timer = loadingTimers.get(iframe);
-        if (timer) {
-          clearTimeout(timer);
+        const loadTimer = loadingTimers.get(iframe);
+        if (loadTimer) {
+          clearTimeout(loadTimer);
           loadingTimers.delete(iframe);
         }
+        const unloadTimer = unloadTimers.get(iframe);
+        if (unloadTimer) {
+          clearTimeout(unloadTimer);
+          unloadTimers.delete(iframe);
+        }
+        activeIframes.delete(iframe);
+        iframeStates.delete(iframe);
       });
       currentIframes = [];
       
@@ -365,7 +372,7 @@
         devicesToShow = group.devices.slice(startIndex, endIndex);
         updatePagination(group.devices.length);
       } else {
-        devicesToShow = group.devices.slice(0, Math.min(group.devices.length, 6));
+        devicesToShow = group.devices;
       }
       
       if (document.body.classList.contains("grid-layout")) {
@@ -530,31 +537,94 @@
     }
 
     const loadingTimers = new Map();
+    const unloadTimers = new Map();
+    const iframeStates = new Map();
+    const activeIframes = new Set();
     let syncEnabled = false;
     let masterIframe = null;
+    
+    // 优化配置
+    const UNLOAD_DELAY = 8000;    // 8秒后卸载
+    const MAX_ACTIVE_IFRAMES = 10; // 最大活跃数量
+
+    // iframe卸载函数
+    function unloadIframe(iframe) {
+      if (iframe.src !== "about:blank") {
+        iframe.src = "about:blank";
+        activeIframes.delete(iframe);
+        iframeStates.set(iframe, { ...iframeStates.get(iframe), wasLoaded: true, lastAccess: Date.now() });
+      }
+    }
+
+    // 强制卸载最久未访问的iframe
+    function enforceMaxActiveLimit() {
+      if (activeIframes.size <= MAX_ACTIVE_IFRAMES) return;
+      
+      // 找到最久未访问的iframe
+      let oldestIframe = null;
+      let oldestTime = Date.now();
+      
+      activeIframes.forEach(iframe => {
+        const state = iframeStates.get(iframe);
+        if (state && state.lastAccess < oldestTime) {
+          oldestTime = state.lastAccess;
+          oldestIframe = iframe;
+        }
+      });
+      
+      if (oldestIframe) {
+        unloadIframe(oldestIframe);
+      }
+    }
 
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         const iframe = entry.target;
         
         if (entry.isIntersecting) {
-          // 进入视口，设置1秒延迟加载
+          // 取消卸载定时器（如果存在）
+          const unloadTimer = unloadTimers.get(iframe);
+          if (unloadTimer) {
+            clearTimeout(unloadTimer);
+            unloadTimers.delete(iframe);
+          }
+          
+          // 更新访问时间
+          const state = iframeStates.get(iframe) || {};
+          iframeStates.set(iframe, { ...state, lastAccess: Date.now() });
+          
+          // 进入视口，设置延迟加载
           if (!loadingTimers.has(iframe) && iframe.src === "about:blank") {
             const timer = setTimeout(() => {
               if (iframe.src === "about:blank") {
+                // 检查活跃iframe数量限制
+                enforceMaxActiveLimit();
+                
                 iframe.src = iframe.dataset.src;
+                activeIframes.add(iframe);
+                iframeStates.set(iframe, { ...iframeStates.get(iframe), wasLoaded: true, lastAccess: Date.now() });
               }
               loadingTimers.delete(iframe);
-            }, 1500); // 停留1秒后加载
+            }, 1500); // 停留1.5秒后加载
             
             loadingTimers.set(iframe, timer);
           }
         } else {
           // 离开视口，取消加载定时器
-          const timer = loadingTimers.get(iframe);
-          if (timer) {
-            clearTimeout(timer);
+          const loadTimer = loadingTimers.get(iframe);
+          if (loadTimer) {
+            clearTimeout(loadTimer);
             loadingTimers.delete(iframe);
+          }
+          
+          // 如果iframe已加载，设置延迟卸载
+          if (iframe.src !== "about:blank" && !unloadTimers.has(iframe)) {
+            const timer = setTimeout(() => {
+              unloadIframe(iframe);
+              unloadTimers.delete(iframe);
+            }, UNLOAD_DELAY);
+            
+            unloadTimers.set(iframe, timer);
           }
         }
       });
